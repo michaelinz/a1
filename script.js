@@ -3,9 +3,8 @@
   fetch('https://luxedreameventhire.co.nz:5001/api/products')
       .then(response => response.json())
       .then(data => {
-          // console.log(data)
-          initalData = data
-          displayAll()
+        initalData = data
+        displayAll()
       });
 })()
 
@@ -53,6 +52,7 @@ function displayData() {
   dataArray = []
 
   initalData.forEach(data => {
+    console.log(data.productMedia[0]?imageUrl+data.productMedia[0].url:'')
     if(categoryChoosen == '' && data.price){
       dataArray.push(data)
       return
@@ -142,7 +142,14 @@ function searchEvent(event) {
 function renderData(array) {
   let display = ''
   array.forEach( data => {
-    display = display + `<div class="col-md-6 col-lg-3 mb-4 ">` + data.title + `<br> Price: $` + (data.price ? data.price : '') + '</div>'
+    display = display + 
+      `
+      <div class="col-md-6 col-lg-3 mb-5 productContainer">
+          <img class="mb-2"src="${data.productMedia[0]?imageUrl+data.productMedia[0].url:''}" alt="image">
+          <h5 class="title">${data.title}</h5>
+          <h5 class="price">Price: $ ${data.price ? data.price : ''}</h5>
+      </div>
+      `
   })
   contentContainer = document.getElementById('contentContainer')
   contentContainer.innerHTML = display
@@ -163,6 +170,9 @@ let sortChoosen = ""
 let dataSortByPrice = []
 let categorySelection = null
 let contentContainer = null
+
+let imageUrl = 'https://storage.googleapis.com/luxe_media/wwwroot/'
+
 
 
 
