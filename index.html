@@ -14,28 +14,40 @@
 <body>
     <div class="container">
 
-
-
     <!-- Category selection -->
     <label for="cars">Choose a product:</label>
-    <select onchange="categorySelectChange(this)" id="productSelection">
-        <!-- <option value="11">"CANDLES & VASES"</option>
-        <option value="18">"TABLES & CONSOLES"</option> -->
+    <select onchange="categorySelectChange(this)" id="categorySelection">
+
     </select>
 
     <!-- Price range selection -->
+    <span>Price Range:</span>
     <select onchange="priceSelectChange(this)" id="productSelection">
-        <option value="11">0 - 100</option>
-        <option value="11">100 - 200</option>
-        <option value="18">200 - 300</option>
-        <option value="18">300 - 400</option>
-        <option value="18">400 +</option>
+      <option value="All">All</option>
+      <option value="0">0 - 100</option>
+      <option value="100">100 - 200</option>
+      <option value="200">200 - 300</option>
+      <option value="300">300 - 400</option>
+      <option value="400">400 +</option>
     </select>
 
     <!-- do a sort by price ( either from most expansive to least or the other way) -->
+    <span>Sort by price:</span>
+    <select onchange="sortByPrice(this)" id="sortSelection">
+      <option value="default">Default</option>
+      <option value="ascend">from low to high</option>
+      <option value="descend">from high to low</option>
+    </select>
+    <br /> <br />
 
     <!-- search by title -->
-    <div class="row" id="contentContainer"></div>
+    <input type="text" id="searchInput" onkeydown="searchEvent(event)">
+    <button onclick="search()">Search</button>
+    <br /> <br />
+
+    <div class="row" id="contentContainer">
+
+    </div>
 </div>
 </body>
 
