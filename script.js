@@ -120,10 +120,12 @@ function sortByPrice(obj){
 
 function search(){
   const searchInput = document.querySelector("#searchInput")
-  const re = new RegExp(searchInput.value,'i');
+
+  const re = new RegExp(searchInput.value, 'i');
   searchArr = dataFilteredByRange.filter(data => 
     data.title.search(re) !== -1
   )
+
   renderData(searchArr)
   console.log(searchArr)
   searchInput.value = ''
@@ -156,10 +158,45 @@ function renderData(array) {
 }
 
 
+
+// 1. URL to store state => function to append url params 
+  //  1a. Add searchvalue=x1 , category = x2
+  //  1b. Append them to the URL
+
+
+  // 2. Get the state from the URL (this runs on initialisation)
+  // https://stackoverflow.com/questions/901115/how-can-i-get-query-string-values-in-javascript
+
+  // 3. According to the state, filter the datas. 
+
+
+
+
+  // Pagination
+  // [{}, {}, {}, {}]
+  // [[{},{}], [{},{}], [{},{}]]
+  // 1. Split array into even chucks 100 / 12 
+  //     1a. have a array of chunk arrays
+
+  // 2. Get which small array to use, from query param, Send the small array (page array) into Render data
+
+  // 3. Render data
+
+
+  // UI 
+  // . Get total number of pages based on how many small arrays are there
+        // . Enable next and previous pages
+
+     
+
+
+
+
 // initial variable declaration 
 let initalData = null
 let displayCategories = ""
 let displayContent = ""
+
 let categoryChoosen = 0
 let categoryArray = []
 let dataArray = []
