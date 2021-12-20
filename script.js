@@ -1,14 +1,13 @@
 // Get data from API
-(function getApiData1() {
+function getApiData1() {
   fetch('https://luxedreameventhire.co.nz:5001/api/products')
-      .then(response => response.json())
-      .then(data => {
-        initalData = data
-        displayAll()
-      });
-})()
-
-
+    .then(response => response.json())
+    .then(data => {
+      // console.log(data)
+      initialData = data
+      displayAll()
+    });
+}
 
 // method 2 
 async function getApiData2() {
@@ -20,25 +19,53 @@ async function getApiData2() {
   }
 }
 
+// Initialise or Refresh
+window.addEventListener('load',()=>{
+  getApiData1()
+})
+
+// go forward or go back
+window.addEventListener('popstate',()=>{
+  getParams()
+})
+
+
+function storeData(){
+  window.sessionStorage.setItem("category", category)
+  window.sessionStorage.setItem("range", range)
+  window.sessionStorage.setItem("sort", sort)
+  window.sessionStorage.setItem("search", searchValue)
+}
+
+function getStoreData(){
+  categoryChoosen = window.sessionStorage.getItem("category") == null ? 0 : window.sessionStorage.getItem("category")
+  priceChoosen = window.sessionStorage.getItem("range") == null ? "All" : window.sessionStorage.getItem("range")
+  sortChoosen = window.sessionStorage.getItem("sort") == null ? "default" : window.sessionStorage.getItem("sort")
+  searchInputValue = window.sessionStorage.getItem("search") == null ? "" : window.sessionStorage.getItem("search")
+}
+
 
 function displayAll(){
   displayClass()
   displayData()
+  getStoreData()
+  addToUrl()
+  getParams()
 }
 
 function displayClass() {
-  displayCategories = `<option value='All'>All</option> `
-  initalData.forEach(data => {
+  displayCategories = `<option value=0 id="category0">All</option> `
+  initialData.forEach(data => {
     // get categoryid
     // if the categoryid does not yet exist on the categroy array, we push this id to the array
     if (data.category && data.category.categoryId) {
       if (!categoryArray.find(category => category.id == data.category.categoryId)) {
         categoryArray.push({
-            id: data.category.categoryId,
-            name: data.category.categoryName,
+          id: data.category.categoryId,
+          name: data.category.categoryName,
         })
 
-        displayCategories = displayCategories + `<option value=${data.category.categoryId}>${data.category.categoryName}</option> `
+        displayCategories = displayCategories + `<option value=${data.category.categoryId} id="category${data.category.categoryId}">${data.category.categoryName}</option> `
       }
     }
   });
@@ -50,96 +77,154 @@ function displayClass() {
 function displayData() {
   displayContent = ""
   dataArray = []
-
-  initalData.forEach(data => {
-    console.log(data.productMedia[0]?imageUrl+data.productMedia[0].url:'')
-    if(categoryChoosen == '' && data.price){
+  // console.log(initialData)
+  initialData.forEach(data => {
+    // console.log(data.productMedia[0].url?imageUrl+data.productMedia[0].url:'')
+    if (!data.productMedia[0] || data.prodId == 1) {
+      return
+    } 
+    else if(categoryChoosen == '' && data.price){
       dataArray.push(data)
       return
-    }
-
-    if (categoryChoosen == "All" || data.categoryId == categoryChoosen && data.price){
+    } 
+    else if (categoryChoosen == 0 || data.categoryId == categoryChoosen && data.price){
       dataArray.push(data)
       return
     }
   });
   dataFilteredByRange = dataArray
-  renderData(dataArray)
+  dataSortByPrice = dataArray
+  // search()
 }
 
 // Inject the content into html
 
 
 function categorySelectChange(obj) {
-  // console.log(obj.value)
   categoryChoosen = obj.value
   displayData()
+  addToUrl()
+  getParams()
 }
 
 function priceSelectChange(obj) {
   priceChoosen = obj.value
+  priceSelectFilter()
+  addToUrl()
+  getParams()
+}
+
+function priceSelectFilter(){
+  // console.log(priceChoosen)
   displayPriceRange = ""
   dataFilteredByRange = []
 
   if (priceChoosen == 'All'){
     dataFilteredByRange = dataArray
-    renderData(dataFilteredByRange)
     return
   }
 
   if (priceChoosen == '400') {
     dataFilteredByRange = dataArray.filter(data => data.price > priceChoosen)
-    renderData(dataFilteredByRange)
     return
   }
 
   dataFilteredByRange = dataArray.filter(data => data.price >= priceChoosen && data.price < (100 + parseInt(priceChoosen)))
-  renderData(dataFilteredByRange)
 }
 
 function sortByPrice(obj){
   sortChoosen = obj.value
+  sortByPriceFilter()
+  addToUrl()
+  getParams()
+}
+
+function sortByPriceFilter(){
   dataSortByPrice = [...dataFilteredByRange]
-  if (sortChoosen == 'default') {
-    dataSortByPrice = dataFilteredByRange
-    renderData(dataSortByPrice)
-  }
+  switch (sortChoosen) {
+    case 'default':
+      dataSortByPrice = dataFilteredByRange
+      break;
 
-  if (sortChoosen == 'ascend'){
-    dataSortByPrice.sort(function(a,b){return a.price-b.price})
-    renderData(dataSortByPrice)
-    return
-  }
-
-  if (sortChoosen == 'descend'){
-    dataSortByPrice.sort(function(a,b){return b.price-a.price})
-    renderData(dataSortByPrice)
-    return
+    case 'ascend':
+      dataSortByPrice.sort(function(a,b){return a.price-b.price})
+      break;
+    
+    case 'descend':
+      dataSortByPrice.sort(function(a,b){return b.price-a.price})
   }
 }
 
 function search(){
-  const searchInput = document.querySelector("#searchInput")
+  searchFilter()
+  addToUrl()
+  getParams()
+}
 
-  const re = new RegExp(searchInput.value, 'i');
-  searchArr = dataFilteredByRange.filter(data => 
-    data.title.search(re) !== -1
+function searchFilter(){
+  let searchInput = document.querySelector("#searchInput")
+  searchInputValue = searchInput.value
+  // const re = new RegExp(searchInputValue, 'i');
+  searchArr = dataSortByPrice.filter(data => 
+    data.title.toLowerCase().search(searchInputValue.toLowerCase()) !== -1
   )
-
-  renderData(searchArr)
-  console.log(searchArr)
-  searchInput.value = ''
   if (searchArr.length == 0) {
     contentContainer.innerHTML = `<div>No Product Found</div>`
   }
 }
+
+function addToUrl(){
+  history.pushState({}, '', url + `?category=${categoryChoosen}&range=${priceChoosen}&sort=${sortChoosen}&search=${searchInputValue}`)
+}
+
+
+function getParams(){
+  urlParams = new URLSearchParams(window.location.search)
+
+  category = urlParams.get('category')
+  range = urlParams.get('range')
+  sort = urlParams.get('sort')
+  searchValue = urlParams.get('search')
+
+  categoryChoosen = category
+  priceChoosen = range
+  sortChoosen = sort
+
+  changeSelected()
+  storeData()
+  renderParams()
+}
+
+function changeSelected(){
+  let categorySelector = document.querySelector(`#category${category}`)
+  categorySelector ? categorySelector.selected=true : ''
+
+  let rangeSelector = document.querySelector(`#range${range}`)
+  rangeSelector ? rangeSelector.selected=true : ''
+
+  let sortSelector = document.querySelector(`#${sort}`)
+  sortSelector ? sortSelector.selected=true : ''
+
+  let searchContent = document.querySelector(`#searchInput`)
+  searchContent.value = searchValue
+}
+
+function renderParams() {
+  displayData()
+  priceSelectFilter()
+  sortByPriceFilter()
+  searchFilter()
+  renderData(searchArr)
+
+}
+
+
 
 function searchEvent(event) {
   if (event.keyCode == 13){
     search()
   }
 }
-
 
 function renderData(array) {
   let display = ''
@@ -193,22 +278,28 @@ function renderData(array) {
 
 
 // initial variable declaration 
-let initalData = null
+let initialData = null
 let displayCategories = ""
 let displayContent = ""
-
 let categoryChoosen = 0
 let categoryArray = []
 let dataArray = []
-let priceChoosen = 0
+let priceChoosen = "All"
 let displayPriceRange = ""
 let dataFilteredByRange = []
-let sortChoosen = ""
+let sortChoosen = "default"
 let dataSortByPrice = []
 let categorySelection = null
-let contentContainer = null
-
+let contentContainer = ''
+let searchInputValue = ''
+let urlParams = ''
+let category = ''
+let range = ''
+let sort = ''
+let searchValue = ''
 let imageUrl = 'https://storage.googleapis.com/luxe_media/wwwroot/'
+let url = 'C:/Users/Administrator/Desktop/new/a1/index.html'
+
 
 
 
