@@ -19,16 +19,36 @@
     text-align: center;
   }
 
-  img{
+  .list img{
     display: block;
     width: 200px;
     height: 200px;
     margin: 0 auto;
   }
+
+  .detailsContainer img{
+    display: block;
+    width: 400px;
+    height: 400px;
+    margin: 0 auto;
+  }
+
+  .details{
+    display:none;
+  }
+
+  a{
+    text-decoration: none;
+  }
+
 </style>
 
 <body>
-    <div class="container">
+  <div class="container detailsContainer">
+
+  </div>
+
+  <div class="container list">
 
     <!-- Category selection -->
     <label for="cars">Choose a product:</label>
@@ -64,7 +84,13 @@
     <div class="row" id="contentContainer">
 
     </div>
-</div>
+  </div>
+
+
+
+<script>
+</script>
+
 </body>
 
 </html>

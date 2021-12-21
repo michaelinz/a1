@@ -35,6 +35,7 @@ function storeData(){
   window.sessionStorage.setItem("range", range)
   window.sessionStorage.setItem("sort", sort)
   window.sessionStorage.setItem("search", searchValue)
+  window.sessionStorage.setItem("productId", productId)
 }
 
 function getStoreData(){
@@ -42,6 +43,7 @@ function getStoreData(){
   priceChoosen = window.sessionStorage.getItem("range") == null ? "All" : window.sessionStorage.getItem("range")
   sortChoosen = window.sessionStorage.getItem("sort") == null ? "default" : window.sessionStorage.getItem("sort")
   searchInputValue = window.sessionStorage.getItem("search") == null ? "" : window.sessionStorage.getItem("search")
+  productId = window.sessionStorage.getItem("productId") == null ? "" : window.sessionStorage.getItem("productId")
 }
 
 
@@ -174,7 +176,7 @@ function searchFilter(){
 }
 
 function addToUrl(){
-  history.pushState({}, '', url + `?category=${categoryChoosen}&range=${priceChoosen}&sort=${sortChoosen}&search=${searchInputValue}`)
+  history.pushState({}, '', url + `?category=${categoryChoosen}&range=${priceChoosen}&sort=${sortChoosen}&search=${searchInputValue}&id=${productId}`)
 }
 
 
@@ -215,10 +217,7 @@ function renderParams() {
   sortByPriceFilter()
   searchFilter()
   renderData(searchArr)
-
 }
-
-
 
 function searchEvent(event) {
   if (event.keyCode == 13){
@@ -232,8 +231,8 @@ function renderData(array) {
     display = display + 
       `
       <div class="col-md-6 col-lg-3 mb-5 productContainer">
-          <img class="mb-2"src="${data.productMedia[0]?imageUrl+data.productMedia[0].url:''}" alt="image">
-          <h5 class="title">${data.title}</h5>
+          <img class="mb-2" src="${data.productMedia[0]?imageUrl+data.productMedia[0].url:''}" alt="image">
+          <a href="javascript:;" id="${data.prodId}" onclick="details(this)"><h5 class="title">${data.title}</h5></a>
           <h5 class="price">Price: $ ${data.price ? data.price : ''}</h5>
       </div>
       `
@@ -242,6 +241,57 @@ function renderData(array) {
   contentContainer.innerHTML = display
 }
 
+
+// Details
+function details(evt) {
+  console.log(evt.id)
+  productId = evt.id
+  let productObj = findProduct(productId)
+  showDetailsContainer()
+  addToUrl()
+  loadDetails(productObj)
+}
+
+function showDetailsContainer() {
+  const list = document.querySelector(".list")
+  list.style.display = 'none'
+
+  const detailsContainer = document.querySelector(".detailsContainer")
+  detailsContainer.style.display = 'block'
+}
+
+function findProduct(id){
+  let productObj = dataArray.find(product => product.prodId == id)
+  return productObj
+}
+
+function hideDetailsContainer() {
+  const list = document.querySelector(".list")
+  list.style.display = 'block'
+
+  const detailsContainer = document.querySelector(".detailsContainer")
+  detailsContainer.style.display = 'none'
+}
+
+function loadDetails(productObj) {
+  console.log(productObj.productMedia[0].url)
+  renderDetails = `
+  <div class="row">
+
+    <div class="col-6">
+      <img src="${imageUrl+productObj.productMedia[0].url}" alt="">
+    </div>
+    
+    <div class="col-6 mt-5 detailsContent">
+      <h4>Product name: ${productObj.title}<h4/>
+      <h4>Price: ${productObj.price}<h4/>
+      <h4>AvailableStock :${productObj.availableStock}<h4/>
+    </div>
+  </div>
+  `
+  let detailsContainer = document.querySelector(".detailsContainer")
+  detailsContainer.innerHTML = renderDetails
+}
 
 
 // 1. URL to store state => function to append url params 
@@ -277,6 +327,11 @@ function renderData(array) {
 
 
 
+
+        
+
+
+
 // initial variable declaration 
 let initialData = null
 let displayCategories = ""
@@ -297,8 +352,10 @@ let category = ''
 let range = ''
 let sort = ''
 let searchValue = ''
+let productId = ''
+let renderDetails = ''
 let imageUrl = 'https://storage.googleapis.com/luxe_media/wwwroot/'
-let url = 'C:/Users/Administrator/Desktop/new/a1/index.html'
+let url = window.document.location.pathname
 
 
 
