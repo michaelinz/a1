@@ -1,5 +1,16 @@
+// Initialise or Refresh
+window.addEventListener('load',()=>{
+  getApiData()
+})
+
+// go forward or go back
+window.addEventListener('popstate',()=>{
+  displayAll()
+})
+
+
 // Get data from API
-function getApiData1() {
+function getApiData() {
   fetch('https://luxedreameventhire.co.nz:5001/api/products')
     .then(response => response.json())
     .then(data => {
@@ -9,51 +20,12 @@ function getApiData1() {
     });
 }
 
-// method 2 
-async function getApiData2() {
-  try {
-    const res = await fetch('https://luxedreameventhire.co.nz:5001/api/products');
-    console.log(res.json())
-  } catch (err) {
-    console.error(err)
-  }
-}
-
-// Initialise or Refresh
-window.addEventListener('load',()=>{
-  getApiData1()
-})
-
-// go forward or go back
-window.addEventListener('popstate',()=>{
-  getParams()
-})
-
-
-function storeData(){
-  window.sessionStorage.setItem("category", category)
-  window.sessionStorage.setItem("range", range)
-  window.sessionStorage.setItem("sort", sort)
-  window.sessionStorage.setItem("search", searchValue)
-  window.sessionStorage.setItem("productId", productId)
-}
-
-function getStoreData(){
-  categoryChoosen = window.sessionStorage.getItem("category") == null ? 0 : window.sessionStorage.getItem("category")
-  priceChoosen = window.sessionStorage.getItem("range") == null ? "All" : window.sessionStorage.getItem("range")
-  sortChoosen = window.sessionStorage.getItem("sort") == null ? "default" : window.sessionStorage.getItem("sort")
-  searchInputValue = window.sessionStorage.getItem("search") == null ? "" : window.sessionStorage.getItem("search")
-  productId = window.sessionStorage.getItem("productId") == null ? "" : window.sessionStorage.getItem("productId")
-}
-
-
 function displayAll(){
   displayClass()
-  displayData()
-  getStoreData()
-  addToUrl()
   getParams()
+  renderParams()
 }
+
 
 function displayClass() {
   displayCategories = `<option value=0 id="category0">All</option> `
@@ -76,7 +48,8 @@ function displayClass() {
   // console.log(categoryArray)
 }
 
-function displayData() {
+// filter the product from choosen category
+function categoryFilter() {
   displayContent = ""
   dataArray = []
   // console.log(initialData)
@@ -96,28 +69,28 @@ function displayData() {
   });
   dataFilteredByRange = dataArray
   dataSortByPrice = dataArray
-  // search()
 }
 
-// Inject the content into html
-
-
+// change the catergory
 function categorySelectChange(obj) {
   categoryChoosen = obj.value
-  displayData()
+  categoryFilter()
   addToUrl()
   getParams()
+  renderParams()
 }
 
+// change the price range option
 function priceSelectChange(obj) {
   priceChoosen = obj.value
   priceSelectFilter()
   addToUrl()
   getParams()
+  renderParams()
 }
 
+// filter the product through price range
 function priceSelectFilter(){
-  // console.log(priceChoosen)
   displayPriceRange = ""
   dataFilteredByRange = []
 
@@ -134,13 +107,16 @@ function priceSelectFilter(){
   dataFilteredByRange = dataArray.filter(data => data.price >= priceChoosen && data.price < (100 + parseInt(priceChoosen)))
 }
 
+// change sort option
 function sortByPrice(obj){
   sortChoosen = obj.value
   sortByPriceFilter()
   addToUrl()
   getParams()
+  renderParams()
 }
 
+// reorder the product through sort option
 function sortByPriceFilter(){
   dataSortByPrice = [...dataFilteredByRange]
   switch (sortChoosen) {
@@ -157,16 +133,18 @@ function sortByPriceFilter(){
   }
 }
 
+// click search button
 function search(){
   searchFilter()
   addToUrl()
   getParams()
+  renderParams()
 }
 
+// filter the product through searchinput
 function searchFilter(){
   let searchInput = document.querySelector("#searchInput")
   searchInputValue = searchInput.value
-  // const re = new RegExp(searchInputValue, 'i');
   searchArr = dataSortByPrice.filter(data => 
     data.title.toLowerCase().search(searchInputValue.toLowerCase()) !== -1
   )
@@ -175,28 +153,26 @@ function searchFilter(){
   }
 }
 
+// add params to url
 function addToUrl(){
-  history.pushState({}, '', url + `?category=${categoryChoosen}&range=${priceChoosen}&sort=${sortChoosen}&search=${searchInputValue}&id=${productId}`)
+  history.pushState({}, '', url + `?category=${categoryChoosen}&range=${priceChoosen}&sort=${sortChoosen}&search=${searchInputValue}`)
 }
 
-
+// get params which is in URL
 function getParams(){
   urlParams = new URLSearchParams(window.location.search)
 
-  category = urlParams.get('category')
-  range = urlParams.get('range')
-  sort = urlParams.get('sort')
-  searchValue = urlParams.get('search')
+  category = urlParams.get('category') == null ? 0 : urlParams.get('category')
+  price = urlParams.get('range') == null ? "All" : urlParams.get('range')
+  sort = urlParams.get('sort') == null ? "default" : urlParams.get('sort')
+  searchValue = urlParams.get('search') == null ? '' : urlParams.get('search')
 
   categoryChoosen = category
-  priceChoosen = range
+  priceChoosen = price
   sortChoosen = sort
-
-  changeSelected()
-  storeData()
-  renderParams()
 }
 
+// change the seleted options
 function changeSelected(){
   let categorySelector = document.querySelector(`#category${category}`)
   categorySelector ? categorySelector.selected=true : ''
@@ -211,100 +187,78 @@ function changeSelected(){
   searchContent.value = searchValue
 }
 
+// filter the data and render it
 function renderParams() {
-  displayData()
+  changeSelected()
+  categoryFilter()
   priceSelectFilter()
   sortByPriceFilter()
   searchFilter()
   renderData(searchArr)
 }
 
+// trigger search when press enter
 function searchEvent(event) {
   if (event.keyCode == 13){
     search()
   }
 }
 
+// render the filtered array
 function renderData(array) {
-  let display = ''
-  array.forEach( data => {
-    display = display + 
+
+  let {newArray,totalPage} = groupedArray(array, num)
+
+  
+  renderPage(newArray, currentPage, totalPage)
+
+}
+
+// groupedArray
+function groupedArray(array, n) {
+  let len = array.length;
+  let totalPage = len / n === 0 ? len / n : Math.floor( (len / n) + 1 )
+  let newArray = [];
+  for (let i = 0; i < totalPage; i++) {
+    let temp = array.slice(i*n, (i+1)*n)
+    newArray.push([...temp])
+  }
+  return ({newArray,totalPage})
+}
+
+// renderPage
+function renderPage(array, currentPage, totalPage) {
+  let displayProduct = ''
+  array[currentPage-1].forEach( data => {
+    displayProduct = displayProduct + 
       `
       <div class="col-md-6 col-lg-3 mb-5 productContainer">
           <img class="mb-2" src="${data.productMedia[0]?imageUrl+data.productMedia[0].url:''}" alt="image">
-          <a href="javascript:;" id="${data.prodId}" onclick="details(this)"><h5 class="title">${data.title}</h5></a>
+          <a href="./details.html?id=${data.prodId}" ><h5 class="title">${data.title}</h5></a>
           <h5 class="price">Price: $ ${data.price ? data.price : ''}</h5>
       </div>
       `
   })
+
   contentContainer = document.getElementById('contentContainer')
-  contentContainer.innerHTML = display
+  contentContainer.innerHTML = displayProduct
+
+  let pageBar = ''
+  let pageNav = ''
+
+  for ( let i = 0; i < totalPage; i++ ) {
+    pageNav = pageNav + `<a href="" id="page${i+1}">${i+1} </a>`
+  }
+
+  pageBar = `<div class="col-12 pagebar">` + 
+    `<a href="">&lt;Previous&gt; </a>` + 
+    pageNav + 
+    `<a href=""> &lt;Next&gt;</a>`+
+    `</div>`
+  
+  pageBarContainer = document.querySelector('#pageBarContainer')
+  pageBarContainer.innerHTML = pageBar
 }
-
-
-// Details
-function details(evt) {
-  console.log(evt.id)
-  productId = evt.id
-  let productObj = findProduct(productId)
-  showDetailsContainer()
-  addToUrl()
-  loadDetails(productObj)
-}
-
-function showDetailsContainer() {
-  const list = document.querySelector(".list")
-  list.style.display = 'none'
-
-  const detailsContainer = document.querySelector(".detailsContainer")
-  detailsContainer.style.display = 'block'
-}
-
-function findProduct(id){
-  let productObj = dataArray.find(product => product.prodId == id)
-  return productObj
-}
-
-function hideDetailsContainer() {
-  const list = document.querySelector(".list")
-  list.style.display = 'block'
-
-  const detailsContainer = document.querySelector(".detailsContainer")
-  detailsContainer.style.display = 'none'
-}
-
-function loadDetails(productObj) {
-  console.log(productObj.productMedia[0].url)
-  renderDetails = `
-  <div class="row">
-
-    <div class="col-6">
-      <img src="${imageUrl+productObj.productMedia[0].url}" alt="">
-    </div>
-    
-    <div class="col-6 mt-5 detailsContent">
-      <h4>Product name: ${productObj.title}<h4/>
-      <h4>Price: ${productObj.price}<h4/>
-      <h4>AvailableStock :${productObj.availableStock}<h4/>
-    </div>
-  </div>
-  `
-  let detailsContainer = document.querySelector(".detailsContainer")
-  detailsContainer.innerHTML = renderDetails
-}
-
-
-// 1. URL to store state => function to append url params 
-  //  1a. Add searchvalue=x1 , category = x2
-  //  1b. Append them to the URL
-
-
-  // 2. Get the state from the URL (this runs on initialisation)
-  // https://stackoverflow.com/questions/901115/how-can-i-get-query-string-values-in-javascript
-
-  // 3. According to the state, filter the datas. 
-
-
 
 
   // Pagination
@@ -321,15 +275,6 @@ function loadDetails(productObj) {
   // UI 
   // . Get total number of pages based on how many small arrays are there
         // . Enable next and previous pages
-
-     
-
-
-
-
-
-        
-
 
 
 // initial variable declaration 
@@ -352,8 +297,12 @@ let category = ''
 let range = ''
 let sort = ''
 let searchValue = ''
-let productId = ''
-let renderDetails = ''
+
+// set up how many products in one page
+let num = 12
+let currentPage = 1
+
+
 let imageUrl = 'https://storage.googleapis.com/luxe_media/wwwroot/'
 let url = window.document.location.pathname
 
