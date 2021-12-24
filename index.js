@@ -61,32 +61,10 @@ function categoryList() {
   categorySelection.innerHTML = displayCategories
 }
 
-// filter the product from choosen category
-function categoryFilter() {
-  displayContent = ""
-  dataArray = []
-  initialData.forEach(data => {
-    if (!data.productMedia[0] || data.prodId == 1) {
-      return
-    } 
-    else if(categoryChoosen == '' && data.price){
-      dataArray.push(data)
-      return
-    } 
-    else if (categoryChoosen == 0 || data.categoryId == categoryChoosen && data.price){
-      dataArray.push(data)
-      return
-    }
-  });
-  dataFilteredByRange = dataArray
-  dataSortByPrice = dataArray
-}
-
 // change the catergory
 function categorySelectChange(obj) {
   categoryChoosen = obj.value
   currentPage = 1
-  categoryFilter()
   addToUrl()
   getParams()
   renderParams()
@@ -96,75 +74,29 @@ function categorySelectChange(obj) {
 function priceSelectChange(obj) {
   priceChoosen = obj.value
   currentPage = 1
-  priceSelectFilter()
   addToUrl()
   getParams()
   renderParams()
-}
-
-// filter the product through price range
-function priceSelectFilter(){
-  displayPriceRange = ""
-  dataFilteredByRange = []
-
-  if (priceChoosen == 'All'){
-    dataFilteredByRange = dataArray
-    return
-  }
-
-  if (priceChoosen == '400') {
-    dataFilteredByRange = dataArray.filter(data => data.price > priceChoosen)
-    return
-  }
-
-  dataFilteredByRange = dataArray.filter(data => data.price >= priceChoosen && data.price < (100 + parseInt(priceChoosen)))
-
 }
 
 // change sort option
-function sortByPrice(obj){
+function sortObj(obj){
   sortChoosen = obj.value
   currentPage = 1
-  sortByPriceFilter()
   addToUrl()
   getParams()
   renderParams()
-}
-
-// reorder the product through sort option
-function sortByPriceFilter(){
-  dataSortByPrice = [...dataFilteredByRange]
-  switch (sortChoosen) {
-    case 'default':
-      dataSortByPrice = dataFilteredByRange
-      break;
-
-    case 'ascend':
-      dataSortByPrice.sort(function(a,b){return a.price-b.price})
-      break;
-    
-    case 'descend':
-      dataSortByPrice.sort(function(a,b){return b.price-a.price})
-  }
 }
 
 // click search button
 function search(){
   currentPage = 1
-  searchFilter()
+  // searchFilter()
+  let searchInput = document.querySelector("#searchInput")
+  searchInputValue = searchInput.value
   addToUrl()
   getParams()
   renderParams()
-}
-
-// filter the product through searchinput
-function searchFilter(){
-  
-  let searchInput = document.querySelector("#searchInput")
-  searchInputValue = searchInput.value
-  searchArr = dataSortByPrice.filter(data => 
-    data.title.toLowerCase().search(searchInputValue.toLowerCase()) !== -1
-  )
 }
 
 // add params to url
@@ -177,9 +109,9 @@ function getParams(){
   urlParams = new URLSearchParams(window.location.search)
   
   category = urlParams.get('category') == null ? 0 : urlParams.get('category')
-  price = urlParams.get('range') == null ? "All" : urlParams.get('range')
+  price = urlParams.get('range') == null ? "-1" : urlParams.get('range')
   sort = urlParams.get('sort') == null ? "default" : urlParams.get('sort')
-  searchValue = urlParams.get('search') == null ? '' : urlParams.get('search')
+  getSearchValue = urlParams.get('search') == null ? '' : urlParams.get('search')
   currentPage = urlParams.get('page') == null ? 1 : urlParams.get('page')
 
   categoryChoosen = category
@@ -187,29 +119,12 @@ function getParams(){
   sortChoosen = sort
 }
 
-// change the seleted options
-function changeSelected(){
-  let categorySelector = document.querySelector(`#category${category}`)
-  categorySelector ? categorySelector.selected=true : ''
-
-  let rangeSelector = document.querySelector(`#range${price}`)
-  rangeSelector ? rangeSelector.selected=true : ''
-
-  let sortSelector = document.querySelector(`#${sort}`)
-  sortSelector ? sortSelector.selected=true : ''
-
-  let searchContent = document.querySelector(`#searchInput`)
-  searchContent.value = searchValue
-}
-
 // filter the data and render it
 function renderParams() {
   changeSelected()
-  categoryFilter()
-  priceSelectFilter()
-  sortByPriceFilter()
-  searchFilter()
-  renderData(searchArr)
+  filter()
+  sortByPrice()
+  renderData(dataSortByPrice)
 }
 
 // trigger search when press enter
@@ -219,9 +134,49 @@ function searchEvent(event) {
   }
 }
 
+// filter the product from choosen category
+function filter() {
+  dataArray = []
+  flag = 0
+  initialData.forEach(data => {
+    if (!data.productMedia[0] || data.prodId == 1) {
+      return
+    } 
+    else if (categoryChoosen == 0 || data.categoryId == categoryChoosen){
+      if (data.title.toLowerCase().search(getSearchValue.toLowerCase()) !== -1) {
+        if (priceChoosen == '400' || priceChoosen == '-1' && data.price > priceChoosen) {
+          dataArray.push(data)
+          return
+        } else if (data.price >= priceChoosen && data.price < (100 + parseInt(priceChoosen))){
+          dataArray.push(data)
+          return
+        }
+      }
+    }
+  })
+}
+
+// filter the product through sort option
+function sortByPrice(){
+  dataSortByPrice = [...dataArray]
+  switch (sortChoosen) {
+    case 'default':
+      dataSortByPrice = dataArray
+      break;
+
+    case 'ascend':
+      dataSortByPrice.sort(function(a,b){return a.price-b.price})
+      break;
+    
+    case 'descend':
+      dataSortByPrice.sort(function(a,b){return b.price-a.price})
+  }
+}
+
+
 // render the filtered array
 function renderData(array) {
-  
+  flag = 0
   if (array.length == 0) {
     contentContainer.innerHTML = `<div>No Product Found</div>`
     pageBarContainer.innerHTML = ''
@@ -231,8 +186,8 @@ function renderData(array) {
   let temp = groupedArray(array, num)
   paginatedArray = temp.newArray
   totalPage = temp.totalPage
-
   renderPage(paginatedArray, currentPage, totalPage)
+  
 }
 
 // groupedArray
@@ -247,44 +202,6 @@ function groupedArray(array, n) {
   return ({newArray,totalPage})
 }
 
-// renderPage
-function renderPage(paginatedArray, currentPage, totalPage) {
-  let displayProduct = '' 
-  paginatedArray[currentPage-1].forEach( data => {
-    displayProduct = displayProduct + 
-      `
-      <div class="col-md-6 col-lg-3 mb-5 productContainer">
-        <img class="mb-2" src="${data.productMedia[0]?imageUrl+data.productMedia[0].url:''}" alt="image">
-        <a href="./details.html?id=${data.prodId}" ><h5 class="title">${data.title}</h5></a>
-        <h5 class="price">Price: $ ${data.price ? data.price : ''}</h5>
-      </div>
-      `
-  })
-
-  contentContainer = document.getElementById('contentContainer')
-  contentContainer.innerHTML = displayProduct
-
-  let pageBar = ''
-  let pageNav = ''
-
-  for ( let i = 0; i < totalPage; i++ ) {
-    pageNav = pageNav + `<a href="" id="page${i+1}">${i+1} </a>`
-  }
-
-  pageBar = `
-    <div class="col-12 pagebar" id="pageBar">
-      <a href="javascript:" id="prevButton">&lt;Previous&gt; </a>
-      <span id="pageNumContainer">${pageNav}</span>
-      <a href="javascript:" id="nextButton"> &lt;Next&gt; </a>
-      <span>Current Page / Total Page: ${currentPage} / ${totalPage}</span>
-    </div>
-    `
-  pageBarContainer = document.querySelector('#pageBarContainer')
-  pageBarContainer.innerHTML = pageBar
-
-  addEventToPageBar(paginatedArray)
-}
-
 // add click event to pageBar
 function addEventToPageBar(paginatedArray){
 
@@ -297,6 +214,8 @@ function addEventToPageBar(paginatedArray){
     addToUrl()
     renderPage(paginatedArray, currentPage, totalPage)
   })
+
+
 
   // add click event to previous button
   let prevButton = document.querySelector('#prevButton')
@@ -315,20 +234,118 @@ function addEventToPageBar(paginatedArray){
   })
 }
 
+// change the seleted options
+function changeSelected(){
+  let categorySelector = document.querySelector(`#category${category}`)
+  categorySelector ? categorySelector.selected=true : ''
+
+  let rangeSelector = document.querySelector(`#range${price}`)
+  rangeSelector ? rangeSelector.selected=true : ''
+
+  let sortSelector = document.querySelector(`#${sort}`)
+  sortSelector ? sortSelector.selected=true : ''
+
+  let searchContent = document.querySelector(`#searchInput`)
+  searchContent.value = getSearchValue
+}
+
+// renderPage
+function renderPage(paginatedArray, currentPage, totalPage) {
+  let displayProduct = ''
+
+  paginatedArray[currentPage-1].forEach( data => {
+    displayProduct = displayProduct + 
+      `
+      <div class="col-md-6 col-lg-3 mb-5 productContainer">
+        <img class="mb-2" src="${data.productMedia[0]?imageUrl+data.productMedia[0].url:''}" alt="image">
+        <a href="./details.html?id=${data.prodId}" ><h5 class="title">${data.title}</h5></a>
+        <h5 class="price">Price: $ ${data.price ? data.price : ''}</h5>
+      </div>
+      `
+  })
+
+  contentContainer = document.getElementById('contentContainer')
+  contentContainer.innerHTML = displayProduct
+
+  renderPageBar()
+}
+
+function renderPageBar() {
+  flag == 0 ?  showPartNum() : showAllNum()
+  
+  pageBar = `
+  <div class="col-12 pagebar" id="pageBar">
+    <a href="javascript:" id="prevButton">&lt;Previous&gt; </a>
+    <span id="pageNumContainer">${pageNav}</span>
+    <a href="javascript:" id="nextButton"> &lt;Next&gt; </a>
+    <br />
+    <span>Current Page / Total Page: ${currentPage} / ${totalPage}</span>
+  </div>
+  `
+  pageBarContainer = document.querySelector('#pageBarContainer')
+  pageBarContainer.innerHTML = pageBar
+
+  if (flag == 0 && totalPage > 11) {addEventToMorePage()}
+
+  addEventToPageBar(paginatedArray)
+}
+
+function showPartNum() {
+  pageNav = ''
+  // if  totalPage is less than 11, show all page number
+  if ( totalPage < 11 ){
+    for ( let i = 0; i < totalPage; i++ ) {
+      pageNav = pageNav + `<a href="" id="page${i+1}">${i+1} </a>`
+    }
+  } 
+
+  // if  totalPage is more than 11, only show 10 page number
+  else if ( totalPage >= 11) {
+    for ( let i = 0; i < 5; i++ ) {
+      pageNav = pageNav + `<a href="" id="page${i+1}">${i+1} </a>`
+    }
+
+    pageNav = pageNav + `<a href="" id="morePage">... </a>`
+
+    for ( let i = totalPage - 5; i < totalPage; i++ ) {
+      pageNav = pageNav + `<a href="" id="page${i+1}">${i+1} </a>`
+    }
+  }
+
+}
+
+// show all page number
+function showAllNum() {
+  pageNav = ''
+  for (let i = 0; i < totalPage; i++){
+    pageNav = pageNav + `<a href="" id="page${i+1}">${i+1} </a>`
+  }
+}
+
+// add click event to ...
+function addEventToMorePage() {
+  let morePage = document.querySelector('#morePage')
+  morePage.addEventListener('click', (evt)=>{
+    evt.preventDefault()
+    evt.stopPropagation()
+    flag = 1
+    renderPageBar()
+  })
+}
+
+
+
+
 // initial variable declaration 
 let initialData = []
 let displayCategories = ""
-let displayContent = ""
 let categoryChoosen = 0
 let categoryArray = []
 let dataArray = []
-let priceChoosen = "All"
-let displayPriceRange = ""
-let dataFilteredByRange = []
+let priceChoosen = -1
 let sortChoosen = "default"
 let dataSortByPrice = []
 let categorySelection = null
-let searchArr = []
 let contentContainer = ''
 let pageBarContainer = ''
 let searchInputValue = ''
@@ -336,7 +353,10 @@ let urlParams = ''
 let category = ''
 let range = ''
 let sort = ''
-let searchValue = ''
+let getSearchValue = ''
+let pageBar = ''
+let pageNav = ''
+let flag = 0
 
 // set up how many products in one page
 let num = 12
@@ -347,9 +367,3 @@ let paginatedArray = []
 
 let imageUrl = 'https://storage.googleapis.com/luxe_media/wwwroot/'
 let url = window.document.location.pathname
-
-
-
-
-
-

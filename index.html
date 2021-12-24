@@ -29,6 +29,11 @@
   a{
     text-decoration: none;
   }
+  
+  a:hover{
+    text-decoration: none;
+    background-color: grey;
+  }
 
   .pagebar{
     font-size: 20px;
@@ -42,7 +47,7 @@
   <div class="container list">
 
     <!-- Category selection -->
-    <label for="cars">Choose a product:</label>
+    <label for="cars">Choose a category:</label>
     <select onchange="categorySelectChange(this)" id="categorySelection">
 
     </select>
@@ -50,7 +55,7 @@
     <!-- Price range selection -->
     <span>Price Range:</span>
     <select onchange="priceSelectChange(this)" id="productSelection">
-      <option value="All" id="rangeAll">All</option>
+      <option value="-1" id="range-1">All</option>
       <option value="0" id="range0">0 - 100</option>
       <option value="100" id="range100">100 - 200</option>
       <option value="200" id="range200">200 - 300</option>
@@ -60,7 +65,7 @@
 
     <!-- do a sort by price ( either from most expansive to least or the other way) -->
     <span>Sort by price:</span>
-    <select onchange="sortByPrice(this)" id="sortSelection">
+    <select onchange="sortObj(this)" id="sortSelection">
       <option value="default" id="default">Default</option>
       <option value="ascend" id="ascend">from low to high</option>
       <option value="descend" id="descend">from high to low</option>

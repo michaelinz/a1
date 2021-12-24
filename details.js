@@ -27,7 +27,6 @@ async function getProduct(id) {
 
 // show Details
 function  displayDetails(productObj) {
-  console.log(productObj)
   renderDetails = `
   <div class="row">
 
